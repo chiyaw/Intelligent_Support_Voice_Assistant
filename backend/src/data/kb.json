@@ -1,0 +1,52 @@
+[
+  {
+    "device": "Any Device",
+    "keywords": ["not working", "issue", "kaam nahi kr raha hai", "kharab", "problem"],
+    "answer": "Please clarify the specific issue you are experiencing with your machine."
+  },
+  {
+    "device": "Air Conditioner",
+    "keywords": ["ac not working", "ac issue", "ac kaam nahi kr raha hai"],
+    "answer": "Please clarify what your air conditioner is doing or not doing."
+  },
+  {
+    "device": "Air Conditioner",
+    "keywords": ["ac not cooling", "ac blowing warm air", "ac cooling issue", "ac thanda nahi kr raha hai", "thanda nahi"],
+    "answer": "Check whether the air filter is clogged. Clean the filter, verify the thermostat is set to Cooling mode, and ensure the outdoor condenser unit is running."
+  },
+  {
+    "device": "Air Conditioner",
+    "keywords": ["ac leaking water", "water dripping from ac", "ac water issue", "ac me se paani gir raha h"],
+    "answer": "Inspect the condensate drain pipe for blockage. Clean the drain line and ensure the indoor unit is mounted with the proper tilt."
+  },
+  {
+    "device": "Air Conditioner",
+    "keywords": ["ac making noise", "loud ac", "ac vibration", "awaj", "awaaj"],
+    "answer": "Check for loose screws, damaged fan blades, or debris inside the unit. Turn off power before inspection."
+  },
+  {
+    "device": "Refrigerator",
+    "keywords": ["fridge not working", "fridge issue", "fridge kaam nahi kr raha hai"],
+    "answer": "Please clarify the issue with your refrigerator."
+  },
+  {
+    "device": "Refrigerator",
+    "keywords": ["fridge not cooling", "refrigerator warm", "thanda nahi kar raha"],
+    "answer": "Verify the thermostat setting, ensure the door closes properly, and check that air vents inside the refrigerator are not blocked."
+  },
+  {
+    "device": "Washing Machine",
+    "keywords": ["washing machine not starting", "machine not turning on", "washing machine not draining"],
+    "answer": "Confirm the power supply is working and ensure the door or lid is securely closed."
+  },
+  {
+    "device": "Washing Machine",
+    "keywords": ["washing machine not draining", "water not draining from washing machine", "paani nahi nikal raha"],
+    "answer": "Inspect the drain hose for kinks or blockage and clean the drain pump filter."
+  },
+  {
+    "device": "Ceiling Fan",
+    "keywords": ["fan not spinning", "ceiling fan stopped", "fan nahi chal raha"],
+    "answer": "Check the wall switch, regulator, and capacitor. Ensure power is reaching the fan."
+  }
+]
