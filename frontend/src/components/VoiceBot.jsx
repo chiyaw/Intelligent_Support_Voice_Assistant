@@ -7,7 +7,7 @@ const SILENCE_DURATION = 2500;
 
 function VoiceBot({ onNewInteraction, loading, setLoading }) {
   const [isListening, setIsListening] = useState(false);
-  const [status, setStatus] = useState("Click 'Start Listening' to speak...");
+  const [status, setStatus] = useState("Click above mic to speak...");
   const [transcript, setTranscript] = useState("");
   const [device, setDevice] = useState("");
   const [answer, setAnswer] = useState("");
@@ -64,7 +64,7 @@ function VoiceBot({ onNewInteraction, loading, setLoading }) {
       };
       mediaRecorderRef.current.onstop = async () => {
         if (!hasSpokenRef.current) {
-          setStatus("No speech detected. Click Start Voice when you're ready.");
+          setStatus("No speech detected. Click on the Mic when you're ready.");
           return;
         }
 
@@ -123,7 +123,7 @@ function VoiceBot({ onNewInteraction, loading, setLoading }) {
       const trimmedText = text?.trim();
 
       if (!trimmedText) {
-        setStatus("No speech detected. Click Start Voice when you're ready.");
+        setStatus("No speech detected. Click on the Mic when you're ready.");
         return;
       }
 
@@ -136,7 +136,7 @@ function VoiceBot({ onNewInteraction, loading, setLoading }) {
     } finally {
       setLoading(false);
       setStatus((prev) =>
-        prev === "No speech detected. Click Start Voice when you're ready."
+        prev === "No speech detected. Click on the Mic when you're ready."
           ? prev
           : "Click 'Start Listening' to speak..."
       );
@@ -156,11 +156,11 @@ function VoiceBot({ onNewInteraction, loading, setLoading }) {
           onClick={toggleListening}
           disabled={loading}
           className={`w-36 h-36 rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
-            isListening ? "bg-emerald-500 text-white animate-pulse ring-8 ring-emerald-100" : "bg-[#FF867A] text-white hover:bg-[#B12A5B] ring-8 ring-[#ebccc9]"
+            isListening ? "bg-emerald-500 text-white animate-pulse ring-8 ring-emerald-100" : "bg-[#ebccc9] text-white hover:bg-[#B12A5B] ring-8 ring-[#ebccc9]"
           } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          <span className="text-3xl mb-1">{isListening ? "🔊" : "🎤"}</span>
-          <span className="text-[11px] font-bold tracking-wider uppercase">{isListening ? "Listening" : "Start Voice"}</span>
+          <span className="text-6xl mb-1">{isListening ? "🔊" : "🎤"}</span>
+          <span className="text-[11px] font-bold tracking-wider uppercase">{isListening ? "Listening" : ""}</span>
         </button>
         <p className="text-xs font-semibold text-slate-600 mt-4">
           Status: <span className={isListening ? "text-emerald-600 font-bold" : "text-[#B12A5B]"}>{status}</span>

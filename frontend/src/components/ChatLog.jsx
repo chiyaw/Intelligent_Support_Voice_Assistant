@@ -24,7 +24,7 @@ function ChatLog({ history }) {
             <div key={index} className="flex flex-col space-y-1.5">
               
               <div className="w-full flex justify-end pl-6">
-                <div className="bg-[#CF556C] text-white rounded-2xl rounded-tr-none px-3.5 py-2 shadow-sm max-w-[95%]">
+                <div className="bg-[#B12A5B] text-white rounded-2xl rounded-tr-none px-3.5 py-2 shadow-sm max-w-[95%]">
                   <p className="text-xs font-medium leading-relaxed">{item.question}</p>
                   <div className="text-[9px] text-white mt-1 text-right font-semibold tracking-wider uppercase">
                     You • {item.device !== "Unknown" ? item.device : "General"}
