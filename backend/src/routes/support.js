@@ -60,18 +60,18 @@ function calculateKeywordScore(normalizedQuery, queryTokenSet, keyword) {
 
 router.post("/search", upload.single("audio"), async (req, res) => {
   let audioPath = null;
+  
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded", answer: constants.EMPTY_QUERY_RESPONSE });
+  }
+
+  audioPath = req.file.path;
+
+  let hindiTranscription, englishTranscription;
   try {
-    if (!req.file) {
-      return res.status(400).json({ answer: constants.EMPTY_QUERY_RESPONSE });
-    }
+    const prompt = "acMera AC thanda nahi kar raha hai. Washing mhine chalu nahi ho raha hai. Refrigerator or fridge is not cooling, vibrating noise issue, paani tapak raha hai, fan nahi chal raha.";
 
-    audioPath = req.file.path;
-
-    const prompt =
-      "Mera AC thanda nahi kar raha hai. Washing machine chalu nahi ho raha hai. Refrigerator or fridge is not cooling, vibrating noise issue, paani tapak raha hai, fan nahi chal raha.";
-
-    // Strict language set: transcribe only in Hindi and English.
-    const [hindiTranscription, englishTranscription] = await Promise.all([
+    [hindiTranscription, englishTranscription] = await Promise.all([
       groq.audio.transcriptions.create({
         file: fs.createReadStream(audioPath),
         model: constants.WHISPER_MODEL,
@@ -85,7 +85,17 @@ router.post("/search", upload.single("audio"), async (req, res) => {
         language: "en",
       }),
     ]);
+  } catch (groqError) {
+    console.error("Groq Transcription Error:", groqError);
+    cleanupFile(audioPath);
+    return res.status(502).json({ 
+      error: "Groq transcription failed", 
+      details: groqError.message 
+    });
+  }
+  cleanupFile(audioPath);
 
+  try {
     const hindiText = (hindiTranscription?.text || "").trim();
     const englishText = (englishTranscription?.text || "").trim();
 
@@ -96,10 +106,6 @@ router.post("/search", upload.single("audio"), async (req, res) => {
       query = containsHindi(hindiText) ? hindiText : englishText;
     }
 
-    if (fs.existsSync(audioPath)) {
-      fs.unlinkSync(audioPath);
-    }
-
     if (!query || query.trim() === "") {
       return res.json({
         transcript: "",
@@ -108,7 +114,6 @@ router.post("/search", upload.single("audio"), async (req, res) => {
         audioUrl: null
       });
     }
-
 
     const normalizedQuery = query.toLowerCase().trim();
     const queryTokenSet = new Set(normalizeTextToTokens(normalizedQuery));
@@ -157,13 +162,23 @@ router.post("/search", upload.single("audio"), async (req, res) => {
       audioUrl: audioUrl
     });
 
-  } catch (error) {
-    console.error("Server Error:", error);
-    if (audioPath && fs.existsSync(audioPath)) {
-      fs.unlinkSync(audioPath);
-    }
-    return res.status(500).json({ answer: "Internal voice extraction pipeline error." });
+  } catch (processingError) {
+    console.error("Data Processing Error:", processingError);
+    return res.status(500).json({ 
+      error: "Error processing transcription or matching knowledge base", 
+      details: processingError.message 
+    });
   }
 });
+
+function cleanupFile(filePath) {
+  try {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (fsError) {
+    console.error("File Cleanup Error (Non-Fatal):", fsError);
+  }
+}
 
 module.exports = router;
