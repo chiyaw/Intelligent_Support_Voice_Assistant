@@ -6,34 +6,13 @@ const fs = require("fs");
 const kb = require("../data/kb.json");
 const constants = require("../config/constants");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = "uploads/";
-
-    try {
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir);
-      }
-
-      cb(null, uploadDir);
-    } catch (err) {
-      cb(err);
-    }
-  },
-
-  filename: function (req, file, cb) {
-    try {
-      const uniqueSuffix =
-        Date.now() + "-" + Math.round(Math.random() * 1e9);
-
-      cb(null, file.fieldname + "-" + uniqueSuffix + ".webm");
-    } catch (err) {
-      cb(err);
-    }
-  },
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 
+  }
 });
-
-const upload = multer({ storage });
 
 const groq = new Groq({
   apiKey: constants.GROQ_API_KEY,
@@ -86,27 +65,11 @@ function calculateKeywordScore(
   return score;
 }
 
-function cleanupFile(filePath) {
-  try {
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log("🗑 File deleted");
-    }
-  } catch (err) {
-    console.error("❌ Cleanup Error");
-    console.error(err);
-  }
-}
-
 router.post(
   "/search",
   upload.single("audio"),
   async (req, res) => {
-    let audioPath = null;
-
     try {
-
-
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -114,14 +77,10 @@ router.post(
         });
       }
 
-      audioPath = req.file.path;
-
-      console.log("📁 Audio uploaded:", audioPath);
-
+      console.log("📁 Audio uploaded, size:", req.file.size);
 
       const prompt =
         "AC thanda nahi kar raha hai. Washing machine chalu nahi ho rahi hai. Refrigerator cooling issue. Fridge vibration noise. Paani tapak raha hai. Fan nahi chal raha.";
-
 
       let hindiTranscription;
       let englishTranscription;
@@ -129,17 +88,20 @@ router.post(
       try {
         console.log("🎤 Starting transcription");
 
+        // Create a buffer stream from the file buffer
+        const audioBuffer = req.file.buffer;
+        
         [hindiTranscription, englishTranscription] =
           await Promise.all([
             groq.audio.transcriptions.create({
-              file: fs.createReadStream(audioPath),
+              file: audioBuffer, // Pass buffer directly
               model: constants.WHISPER_MODEL,
               prompt,
               language: "hi",
             }),
 
             groq.audio.transcriptions.create({
-              file: fs.createReadStream(audioPath),
+              file: audioBuffer, // Pass buffer directly
               model: constants.WHISPER_MODEL,
               prompt,
               language: "en",
@@ -158,8 +120,6 @@ router.post(
           `Groq transcription failed: ${err.message}`
         );
       }
-
-
 
       let hindiText = "";
       let englishText = "";
@@ -180,8 +140,6 @@ router.post(
 
         throw err;
       }
-
-
 
       let query = "";
 
@@ -209,10 +167,6 @@ router.post(
         throw err;
       }
 
-      cleanupFile(audioPath);
-
-
-
       if (!query || !query.trim()) {
         return res.json({
           transcript: "",
@@ -221,7 +175,6 @@ router.post(
           audioUrl: null,
         });
       }
-
 
       let answer = constants.FALLBACK_RESPONSE;
       let device = "Not identified";
@@ -302,8 +255,6 @@ router.post(
         throw err;
       }
 
-
-
       let audioUrl = null;
 
       try {
@@ -344,8 +295,6 @@ router.post(
       console.error("Message :", error.message);
       console.error("Stack :", error.stack);
       console.error("===========================\n");
-
-      cleanupFile(audioPath);
 
       return res.status(500).json({
         success: false,
