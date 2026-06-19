@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const { Groq } = require("groq-sdk");
-const fs = require("fs");
 const kb = require("../data/kb.json");
 const constants = require("../config/constants");
+
 
 const storage = multer.memoryStorage();
 const upload = multer({ 
@@ -88,20 +88,20 @@ router.post(
       try {
         console.log("🎤 Starting transcription");
 
-        // Create a buffer stream from the file buffer
-        const audioBuffer = req.file.buffer;
+       
+        const { Readable } = require('stream');
+        const audioStream = Readable.from([req.file.buffer]);
         
         [hindiTranscription, englishTranscription] =
           await Promise.all([
             groq.audio.transcriptions.create({
-              file: audioBuffer, // Pass buffer directly
+              file: audioStream,
               model: constants.WHISPER_MODEL,
               prompt,
               language: "hi",
             }),
-
             groq.audio.transcriptions.create({
-              file: audioBuffer, // Pass buffer directly
+              file: audioStream,
               model: constants.WHISPER_MODEL,
               prompt,
               language: "en",
@@ -110,34 +110,21 @@ router.post(
 
         console.log("✅ Transcription complete");
       } catch (err) {
-        console.error(
-          "❌ Groq Transcription Failed"
-        );
-
+        console.error("❌ Groq Transcription Failed");
         console.error(err);
-
-        throw new Error(
-          `Groq transcription failed: ${err.message}`
-        );
+        throw new Error(`Groq transcription failed: ${err.message}`);
       }
 
       let hindiText = "";
       let englishText = "";
 
       try {
-        hindiText =
-          (hindiTranscription?.text || "").trim();
-
-        englishText =
-          (englishTranscription?.text || "").trim();
-
+        hindiText = (hindiTranscription?.text || "").trim();
+        englishText = (englishTranscription?.text || "").trim();
         console.log("Hindi :", hindiText);
         console.log("English :", englishText);
       } catch (err) {
-        console.error(
-          "❌ Transcript Extraction Error"
-        );
-
+        console.error("❌ Transcript Extraction Error");
         throw err;
       }
 
@@ -146,24 +133,15 @@ router.post(
       try {
         if (hindiText && !englishText) {
           query = hindiText;
-        }
-
-        else if (!hindiText && englishText) {
+        } else if (!hindiText && englishText) {
           query = englishText;
-        }
-
-        else if (hindiText && englishText) {
-          query = containsHindi(hindiText)
-            ? hindiText
-            : englishText;
+        } else if (hindiText && englishText) {
+          query = containsHindi(hindiText) ? hindiText : englishText;
         }
 
         console.log("Selected Query :", query);
       } catch (err) {
-        console.error(
-          "❌ Query Selection Error"
-        );
-
+        console.error("❌ Query Selection Error");
         throw err;
       }
 
@@ -180,17 +158,13 @@ router.post(
       let device = "Not identified";
 
       try {
-        const normalizedQuery = query
-          .toLowerCase()
-          .trim();
-
+        const normalizedQuery = query.toLowerCase().trim();
         const queryTokenSet = new Set(
           normalizeTextToTokens(normalizedQuery)
         );
 
         let bestSpecificMatch = null;
         let highestSpecificScore = 0;
-
         let bestGenericMatch = null;
         let highestGenericScore = 0;
 
@@ -209,9 +183,7 @@ router.post(
             0
           );
 
-          const isGeneric =
-            item.device.toLowerCase() ===
-            "any device";
+          const isGeneric = item.device.toLowerCase() === "any device";
 
           if (isGeneric) {
             if (score > highestGenericScore) {
@@ -228,17 +200,13 @@ router.post(
 
         if (
           bestSpecificMatch &&
-          highestSpecificScore >=
-            constants.MIN_MATCH_SCORE
+          highestSpecificScore >= constants.MIN_MATCH_SCORE
         ) {
           answer = bestSpecificMatch.answer;
           device = bestSpecificMatch.device;
-        }
-
-        else if (
+        } else if (
           bestGenericMatch &&
-          highestGenericScore >=
-            constants.MIN_MATCH_SCORE
+          highestGenericScore >= constants.MIN_MATCH_SCORE
         ) {
           answer = bestGenericMatch.answer;
           device = bestGenericMatch.device;
@@ -246,38 +214,26 @@ router.post(
 
         console.log("Device :", device);
         console.log("Answer :", answer);
-
       } catch (err) {
         console.error("❌ KB Search Error");
-
         console.error(err);
-
         throw err;
       }
 
       let audioUrl = null;
 
       try {
-        const ttsLang = containsHindi(query)
-          ? "hi"
-          : "en";
-
-        const encodedText =
-          encodeURIComponent(answer);
-
+        const ttsLang = containsHindi(query) ? "hi" : "en";
+        const encodedText = encodeURIComponent(answer);
         audioUrl =
           `https://translate.google.com/translate_tts` +
           `?ie=UTF-8` +
           `&tl=${ttsLang}` +
           `&client=tw-ob` +
           `&q=${encodedText}`;
-
       } catch (err) {
-
         console.error("❌ TTS Error");
-
         console.error(err);
-
         audioUrl = null;
       }
 
@@ -287,9 +243,7 @@ router.post(
         answer,
         audioUrl,
       });
-
     } catch (error) {
-
       console.error("\n========== ERROR ==========");
       console.error("Name :", error.name);
       console.error("Message :", error.message);
